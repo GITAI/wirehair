@@ -1,0 +1,89 @@
+version: 2.1
+ros_steps: &ros_steps
+  - restore_cache:
+      keys:
+        - <<parameters.ccache_prefix>>-{{ .Branch }}-{{ .Revision }}
+        - <<parameters.ccache_prefix>>-{{ .Branch }}-
+        - <<parameters.ccache_prefix>>-
+  - run:
+      # Install git and ssh before checkout. Because larger
+      name: install git and ssh
+      command: |
+        apt update
+        apt install -y git ssh ccache
+        # Creat .ssh/config in order to disable host key prompt
+         mkdir -p ~/.ssh
+         echo "Host *" >> ~/.ssh/config
+        echo "  StrictHostKeyChecking no" >> ~/.ssh/config
+  - run:
+      name: Larger ccache storage
+      command: |
+        ccache -M 5G
+  - checkout
+  - add_ssh_keys
+  - run:
+      name: update submodules (if needed)
+      command: |
+        git submodule update --init
+  - run:
+      name: Set Up Container
+      command: |
+        apt-get update -qq && apt-get install -y python-catkin-tools python-pip
+  - run:
+      name: Clone other repositories
+      command: |
+        cd ..
+        wstool init --shallow
+        if [ -n "${ROSINSTALL_FILE}" -a -e ${ROSINSTALL_FILE} ]; then
+          wstool merge project/$ROSINSTALL_FILE
+          wstool update -j10
+        fi
+  - run:
+      name: rosdep install
+      command: |
+        source `find /opt/ros -name setup.bash | sort | head -1`
+        rosdep update
+        rosdep install --from-paths .. --ignore-src -rny || true
+  - run:
+      name: catkin init
+      command: |
+        cd ../..
+        catkin init
+        catkin config --extend /opt/ros/$ROS_DISTRO --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache
+  - run:
+      name: Build
+      command: |
+        source `find /opt/ros -name setup.bash | sort | head -1`
+        TARGET_PKGS=$(catkin_topological_order . --only-names)
+        cd ../..
+        catkin build --no-status --summarize
+  - run:
+      name: Run Tests
+      command: |
+        source ../../devel/setup.bash
+        TARGET_PKGS=$(catkin_topological_order . --only-names)
+        cd ../..
+        catkin run_tests --no-deps --no-status --summarize "${TARGET_PKGS[@]}"
+        catkin_test_results --all --verbose
+  - save_cache:
+      key: <<parameters.ccache_prefix>>-{{ .Branch }}-{{ .Revision }}
+      paths:
+        - ~/.ccache
+
+jobs:
+  melodic:
+    docker:
+      - image: gitaiinc/gitai-ci:melodic
+    steps: *ros_steps
+    working_directory: ~/src/project
+    environment:
+      ROSINSTALL_FILE: .travis.rosinstall
+    parameters:
+      ccache_prefix:
+        type: string
+        default: cache-melodic
+
+workflows:
+  tests:
+    jobs:
+      - melodic
