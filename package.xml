@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>wirehair</name>
+  <version>2.0.0</version>
+  <description>Fast and Portable Fountain Codes in C</description>
+  <maintainer email="y.furuta@gitai.tech">Yuki Furuta</maintainer>
+  <license>BSD</license>
+  <author email="mrcatid@gmail.com">Christopher A. Taylor</author>
+  <buildtool_depend>cmake</buildtool_depend>
+  <exec_depend>catkin</exec_depend>
+  <export>
+    <build_type>cmake</build_type>
+  </export>
+</package>
