@@ -56,15 +56,20 @@ set(GEN_TABLES
 
 if(MSVC)
 else()
-    set(CMAKE_CXX_FLAGS "-Wall -Wextra")
-    set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -march=native")
-    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native")
+    set(CMAKE_CXX_FLAGS "-Wall -Wextra -march=native")
+    set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+    if (CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+        add_definitions(-DLINUX_ARM=1)
+    endif()
 endif()
 
 add_library(wirehair ${LIB_SOURCE_FILES})
 set_target_properties(wirehair PROPERTIES VERSION 2)
 set_target_properties(wirehair PROPERTIES SOVERSION 2)
-target_include_directories(wirehair PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(wirehair PUBLIC
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
 
 add_executable(unit_test ${UNIT_TEST_SOURCE_FILES})
 target_link_libraries(unit_test wirehair)
@@ -86,5 +91,11 @@ add_executable(gen_tables ${GEN_TABLES})
 include(GNUInstallDirs)
 
 install(TARGETS wirehair
+    EXPORT wirehairConfig
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(DIRECTORY include python DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(EXPORT wirehairConfig DESTINATION ${CMAKE_INSTALL_PREFIX}/share/wirehair/cmake
+  EXPORT_LINK_INTERFACE_LIBRARIES)
