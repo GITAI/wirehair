@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(wirehair)
 
 set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_COMPILER /usr/bin/g++-10)
 
 set(LIB_SOURCE_FILES
         wirehair.cpp
