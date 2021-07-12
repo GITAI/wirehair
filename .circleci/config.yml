@@ -1,0 +1,38 @@
+version: 2.1
+
+jobs:
+  test:
+    parameters:
+      compiler_version:
+        type: string
+    docker:
+      - image: gcc:<<parameters.compiler_version>>
+        auth:
+          username: $DOCKER_USER
+          password: $DOCKER_PASSWORD
+    steps:
+      - run:
+          name: Check compiler version
+          command: g++ --version
+      - run:
+          name: Install cmake
+          command: |
+            apt-get -qq update
+            apt-get -qq -y install cmake
+      - checkout
+      - run:
+          name: Build project
+          command: |
+            mkdir -p build
+            cd build
+            cmake ..
+            make -j2
+
+workflows:
+  tests:
+    jobs:
+      - test:
+          context: gitai_ci
+          matrix:
+            parameters:
+              compiler_version: ['9.3.0', '10.3.0']
