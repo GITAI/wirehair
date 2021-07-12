@@ -2,7 +2,11 @@ cmake_minimum_required(VERSION 3.5)
 project(wirehair)
 
 set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_COMPILER /usr/bin/g++-10)
+find_program(CXX_10 g++-10)
+if (CXX_10)
+  message(STATUS "Using g++-10 as cxx compiler")
+  set(CMAKE_CXX_COMPILER CXX_10)
+endif()
 
 set(LIB_SOURCE_FILES
         wirehair.cpp
