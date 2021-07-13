@@ -4,7 +4,7 @@ project(wirehair)
 set(CMAKE_CXX_STANDARD 11)
 find_program(CXX_10 g++-10)
 if (CXX_10)
-  set(CMAKE_CXX_COMPILER CXX_10)
+  set(CMAKE_CXX_COMPILER ${CXX_10})
 endif()
 message(STATUS "CMAKE_CXX_COMPILER_VERSION: ${CMAKE_CXX_COMPILER_VERSION}")
 
