@@ -2,10 +2,6 @@ cmake_minimum_required(VERSION 3.5)
 project(wirehair)
 
 set(CMAKE_CXX_STANDARD 11)
-find_program(CXX_10 g++-10)
-if (CXX_10)
-  set(CMAKE_CXX_COMPILER ${CXX_10})
-endif()
 message(STATUS "CMAKE_CXX_COMPILER_VERSION: ${CMAKE_CXX_COMPILER_VERSION}")
 
 set(LIB_SOURCE_FILES
@@ -61,16 +57,20 @@ set(GEN_TABLES
 
 if(MSVC)
 else()
-    # Do not use -march=native for distributed compilation.
-    # Run g++ -Q -march=native --help=target and get the native architecture.
-    execute_process(COMMAND g++ -Q -march=native --help=target
-                    COMMAND grep -- -march
-                    COMMAND head -n1
-                    COMMAND sed "s/-march=//g"
-                    COMMAND sed "s/[ \t]*//g"
-                    OUTPUT_VARIABLE DETAILED_ARCHITECTURE
-                    OUTPUT_STRIP_TRAILING_WHITESPACE)
-    set(CMAKE_CXX_FLAGS "-Wall -Wextra -march=${DETAILED_ARCHITECTURE}")
+    # gcc-8 does not support -march=native
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 9)
+        # Do not use -march=native for distributed compilation.
+        # Run g++ -Q -march=native --help=target and get the native architecture.
+        execute_process(COMMAND g++ -Q -march=native --help=target
+                        COMMAND grep -- -march
+                        COMMAND head -n1
+                        COMMAND sed "s/-march=//g"
+                        COMMAND sed "s/[ \t]*//g"
+                        OUTPUT_VARIABLE DETAILED_ARCHITECTURE
+                        OUTPUT_STRIP_TRAILING_WHITESPACE)
+        set(CMAKE_CXX_FLAGS "-march=${DETAILED_ARCHITECTURE}")
+    endif()
+    set(CMAKE_CXX_FLAGS "-Wall -Wextra ${CMAKE_CXX_FLAGS}")
     set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
     set(CMAKE_CXX_FLAGS_RELEASE "-O3")
     if (CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
