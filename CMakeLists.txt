@@ -59,16 +59,13 @@ if(MSVC)
 else()
     # gcc-8 does not support -march=native
     if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 9)
-        # Do not use -march=native for distributed compilation.
-        # Run g++ -Q -march=native --help=target and get the native architecture.
-        execute_process(COMMAND g++ -Q -march=native --help=target
-                        COMMAND grep -- -march
-                        COMMAND head -n1
-                        COMMAND sed "s/-march=//g"
-                        COMMAND sed "s/[ \t]*//g"
-                        OUTPUT_VARIABLE DETAILED_ARCHITECTURE
+        # Do not use -march=native for distributed compilation. Parse the options that are enabled
+        # by -march=native explicitly.
+        execute_process(COMMAND bash -c "gcc -\#\#\# -E - -march=native 2>&1"
+                        COMMAND sed -r "/cc1/!d;s/(\")|(^.* - )//g"
+                        OUTPUT_VARIABLE OPTIONS
                         OUTPUT_STRIP_TRAILING_WHITESPACE)
-        set(CMAKE_CXX_FLAGS "-march=${DETAILED_ARCHITECTURE}")
+        set(CMAKE_CXX_FLAGS "${OPTIONS}")
     endif()
     set(CMAKE_CXX_FLAGS "-Wall -Wextra ${CMAKE_CXX_FLAGS}")
     set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
